@@ -1,33 +1,47 @@
 import threading
 
+
 class NFT:
-    def __init__(self, name, risk_level, price):
-        self.name = name
-        self.risk_level = risk_level
-        self.price = price
+    def __init__(self, nombre, riesgo, precio):
+        self.nombre = nombre
+        self.riesgo = riesgo
+        self.precio = precio
+
 
 class User:
-    def __init__(self, name, user_type):
-        self.name = name
-        self.user_type = user_type
+    def __init__(self, nombre, tipo_usuario):
+        self.nombre = nombre
+        self.tipo_usuario = tipo_usuario
+
+
+def Interesa(user, nft):
+    # Criterio para decidir si el NFT interesa al cliente
+    # Retorna True si el NFT es de interés, False en caso contrario
+    return True  # Ejemplo: Se asume que todos los NFTs son de interés para el cliente
+
+
+def Nivel_Riesgo(nft):
+    # Criterio para decidir el nivel de riesgo del NFT
+    # Retorna el nivel de riesgo del NFT (bajo, medio, alto)
+    return "bajo"  # Ejemplo: Se asume que todos los NFTs tienen un nivel de riesgo bajo
 
 class Server:
-    def __init__(self, capacity):
-        self.capacity = capacity
+    def __init__(self, capacidad):
+        self.capacidad = capacidad
         self.ads = []
         self.lock = threading.Lock()
 
     def add_ad(self, nft):
         with self.lock:
-            if len(self.ads) < self.capacity:
+            if len(self.ads) < self.capacidad:
                 self.ads.append(nft)
             else:
-                print("Server is full. Can't add more ads.")
+                print("El servidor esta completo. No puedes añadir más.")
 
-    def provide_ad(self, risk_level, discarded_ads):
+    def provide_ad(self, riesgo, discarded_ads):
         with self.lock:
             for ad in self.ads:
-                if ad not in discarded_ads and ad.risk_level == risk_level:
+                if ad not in discarded_ads and ad.riesgo == riesgo:
                     return ad
             return None
 
@@ -40,10 +54,23 @@ class Buyer(threading.Thread):
         super().__init__()
         self.server = server
         self.user = user
+        self.discarded_ads = []
 
     def run(self):
-        # Lógica de compra de NFTs por parte del comprador
-        pass
+        max_risk_level = Nivel_Riesgo(self.user)
+        while True:
+            ad = self.server.provide_ad(max_risk_level, self.discarded_ads)
+            if ad is not None:
+                if Interesa(self.user, ad):
+                    print(f"{self.user.nombre} esta interesado en  {ad.nombre}")
+                    # Realizar acciones adicionales cuando el NFT interesa al comprador
+                    break
+                else:
+                    self.discarded_ads.append(ad)
+            else:
+                print(f"No hay anuncios disponibles para {self.user.nombre}")
+                break
+
 
 class Seller(threading.Thread):
     def __init__(self, server, user, nft):
@@ -53,17 +80,17 @@ class Seller(threading.Thread):
         self.nft = nft
 
     def run(self):
-        # Lógica de venta de NFTs por parte del vendedor
+        # Criterio de venta de NFTs por el vendedor
         pass
 
-# Ejemplo de uso
+# Un ejemplo de como podría usarse:
 
 server = Server(100)
 
-user1 = User("Alice", "buyer")
-user2 = User("Bob", "seller")
+user1 = User("Manolo", "buyer")
+user2 = User("Alicia", "seller")
 
-nft = NFT("Artwork1", "low", 200)
+nft = NFT("Obra de Arte", "Bajo", 200)
 
 buyer = Buyer(server, user1)
 seller = Seller(server, user2, nft)
